@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+face_recognition
+google-generative-ai
+edge-tts  # 微软免费且高质量的 TTS
+schedule  # 简单的定时任务库
+numpy
+pillow

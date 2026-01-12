@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # 核心 API 服务 + 人脸识别
+  backend:
+    build: ./backend
+    container_name: horizon_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data  # 挂载数据目录
+    environment:
+      - GEMINI_API_KEY=你的Key在这里
+      - TZ=Asia/Shanghai
+
+  # 静态文件服务 (用于让 iPad 下载 MP3 和 JSON)
+  nginx:
+    image: nginx:alpine
+    container_name: horizon_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data:/usr/share/nginx/html:ro # 只读挂载
