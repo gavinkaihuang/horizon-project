@@ -6,7 +6,19 @@ import threading
 import schedule
 import time
 import subprocess
+import logging
+import datetime
 
+# --- 日志配置 ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        # logging.FileHandler("/app/logs/backend.log") # Optional: log to file
+    ]
+)
+logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # --- 人脸识别初始化 ---
@@ -25,7 +37,7 @@ def load_faces():
             if encs:
                 known_encodings.append(encs[0])
                 known_names.append(os.path.splitext(file)[0])
-    print(f"已加载人脸库: {known_names}")
+    logger.info(f"已加载人脸库: {known_names}")
 
 load_faces()
 
@@ -33,6 +45,7 @@ load_faces()
 
 @app.post("/api/recognize")
 async def recognize(file: UploadFile = File(...)):
+    logger.info(f"Received recognition request: {file.filename}")
     # 保存上传的图片
     temp_path = f"/tmp/{file.filename}"
     with open(temp_path, "wb") as buffer:
@@ -54,12 +67,35 @@ async def recognize(file: UploadFile = File(...)):
             user_id = known_names[match_index]
             break
             
+    
+    if user_id == "guest":
+        logger.warning(f"Recognition failed for {file.filename}")
+    else:
+        logger.info(f"Recognized user: {user_id} for {file.filename}")
+
     return {"user": user_id}
 
 # --- 定时任务线程 ---
 def run_scheduler():
+def run_content_gen_job():
+    logger.info("Starting daily content generation job...")
+    try:
+        result = subprocess.run(
+            ["python", "content_gen.py"], 
+            capture_output=True, 
+            text=True,
+            check=False
+        )
+        if result.returncode == 0:
+            logger.info(f"Content generation success:\n{result.stdout}")
+        else:
+            logger.error(f"Content generation failed (code {result.returncode}):\n{result.stderr}")
+    except Exception as e:
+        logger.error(f"Error running content generation job: {e}")
+
+def run_scheduler():
     # 每天凌晨 4 点运行 content_gen.py
-    schedule.every().day.at("04:00").do(lambda: subprocess.run(["python", "content_gen.py"]))
+    schedule.every().day.at("04:00").do(run_content_gen_job)
     while True:
         schedule.run_pending()
         time.sleep(60)
