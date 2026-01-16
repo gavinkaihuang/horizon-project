@@ -8,7 +8,22 @@ import time
 import subprocess
 import logging
 import datetime
+import logging
+import datetime
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine, Base
+import models
 
+# 创建数据库表
+Base.metadata.create_all(bind=engine)
+
+# 依赖项：获取 DB 会话
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 # --- 日志配置 ---
 logging.basicConfig(
     level=logging.INFO,
@@ -21,25 +36,73 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 app = FastAPI()
 
-# --- 人脸识别初始化 ---
+# --- 人脸识别初始化 & 同步 ---
 known_encodings = []
 known_names = []
 
-def load_faces():
-    """加载 /app/data/known_faces 下的照片"""
-    face_dir = "/app/data/known_faces"
-    if not os.path.exists(face_dir): return
+def sync_faces_to_db():
+    """
+    1. 从 DB 加载人脸数据到内存 (known_encodings, known_names)
+    2. 扫描 /app/data/known_faces，如果有新文件但 DB 没有，则处理并存入 DB
+    """
+    global known_encodings, known_names
+    db = SessionLocal()
     
+    # 1. Load from DB
+    face_records = db.query(models.FaceEncoding).all()
+    known_encodings = [rec.encoding for rec in face_records]
+    known_names = [rec.user.name for rec in face_records]
+    logger.info(f"Loaded {len(known_names)} faces from database: {known_names}")
+
+    # 2. Sync from File System
+    face_dir = "/app/data/known_faces"
+    if not os.path.exists(face_dir):
+        logger.warning(f"Face directory {face_dir} not found.")
+        db.close()
+        return
+
+    new_faces_count = 0
     for file in os.listdir(face_dir):
         if file.endswith(('.jpg', '.png')):
-            img = face_recognition.load_image_file(os.path.join(face_dir, file))
-            encs = face_recognition.face_encodings(img)
-            if encs:
-                known_encodings.append(encs[0])
-                known_names.append(os.path.splitext(file)[0])
-    logger.info(f"已加载人脸库: {known_names}")
+            name = os.path.splitext(file)[0]
+            
+            # Check if user/face already exists in memory (simple check)
+            if name in known_names:
+                continue
 
-load_faces()
+            logger.info(f"New face file found: {file}. Processing...")
+            try:
+                img = face_recognition.load_image_file(os.path.join(face_dir, file))
+                encs = face_recognition.face_encodings(img)
+                if encs:
+                    encoding = encs[0]
+                    
+                    # Create User if not exists
+                    user = db.query(models.User).filter(models.User.name == name).first()
+                    if not user:
+                        user = models.User(name=name)
+                        db.add(user)
+                        db.commit()
+                        db.refresh(user)
+                    
+                    # Create FaceEncoding
+                    face_entry = models.FaceEncoding(user_id=user.id, encoding=encoding)
+                    db.add(face_entry)
+                    db.commit()
+                    
+                    # Update memory
+                    known_encodings.append(encoding)
+                    known_names.append(name)
+                    new_faces_count += 1
+            except Exception as e:
+                logger.error(f"Error processing {file}: {e}")
+
+    if new_faces_count > 0:
+        logger.info(f"Imported {new_faces_count} new faces to database.")
+    
+    db.close()
+
+sync_faces_to_db()
 
 # --- API 接口 ---
 
@@ -68,10 +131,30 @@ async def recognize(file: UploadFile = File(...)):
             break
             
     
-    if user_id == "guest":
-        logger.warning(f"Recognition failed for {file.filename}")
-    else:
-        logger.info(f"Recognized user: {user_id} for {file.filename}")
+    # Log to DB
+    db = SessionLocal()
+    try:
+        log_entry = models.RecognitionLog(
+            user_name_snapshot=user_id,
+            timestamp=datetime.datetime.now(),
+            image_path=None # We are not saving recognized images permanently yet
+        )
+        
+        if user_id != "guest":
+            logger.info(f"Recognized user: {user_id} for {file.filename}")
+            # Identify User object
+            user_obj = db.query(models.User).filter(models.User.name == user_id).first()
+            if user_obj:
+                log_entry.user_id = user_obj.id
+        else:
+            logger.warning(f"Recognition failed for {file.filename}")
+
+        db.add(log_entry)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Failed to log recognition to DB: {e}")
+    finally:
+        db.close()
 
     return {"user": user_id}
 
