@@ -159,7 +159,6 @@ async def recognize(file: UploadFile = File(...)):
     return {"user": user_id}
 
 # --- 定时任务线程 ---
-def run_scheduler():
 def run_content_gen_job():
     logger.info("Starting daily content generation job...")
     try:
