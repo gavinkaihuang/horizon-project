@@ -16,10 +16,20 @@ async def generate_daily_content():
     # Prompt (此处省略详细 Prompt，参考之前的对话)
     prompt = "Generate a daily quote JSON for a high school student learning English..."
     
+    import re
     try:
         response = model.generate_content(prompt)
         print(f"DEBUG: Raw response: {response.text}")
-        content = json.loads(response.text.replace('```json', '').replace('```', ''))
+        
+        # Robustly extract JSON block
+        match = re.search(r'```json\s*(.*?)\s*```', response.text, re.DOTALL)
+        if match:
+             json_str = match.group(1)
+        else:
+             # Fallback: try to find the first { and last }
+             json_str = response.text[response.text.find('{'):response.text.rfind('}')+1]
+             
+        content = json.loads(json_str)
         
         # 1. 保存 JSON
         with open(f"{DATA_DIR}/daily.json", "w") as f:

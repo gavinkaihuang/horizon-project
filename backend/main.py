@@ -105,6 +105,9 @@ def sync_faces_to_db():
 sync_faces_to_db()
 
 # --- API 接口 ---
+@app.get("/")
+def read_root():
+    return {"message": "Horizon Backend is running"}
 
 @app.post("/api/recognize")
 async def recognize(file: UploadFile = File(...)):
