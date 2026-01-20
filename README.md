@@ -61,6 +61,6 @@ curl -X POST -F "file=@/path/to/photo.jpg" http://localhost:8098/api/recognize
 ```
 
 **Daily Content:**
-The system generates English learning content at 04:00 daily. You can also trigger it manually by restarting the backend (it runs on startup).
-- **JSON Data**: `http://localhost:8090/daily.json`
-- **Audio File**: `http://localhost:8090/daily_audio.mp3`
+The system generates English learning content at 04:00 daily.
+- **JSON Data**: `http://localhost:8090/YYYY-MM-DD/daily.json` (e.g., `http://localhost:8090/2026-01-20/daily.json`)
+- **Audio File**: `http://localhost:8090/YYYY-MM-DD/daily_audio.mp3`

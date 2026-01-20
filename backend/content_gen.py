@@ -18,7 +18,7 @@ async def generate_daily_content():
     prompt = f"""
     Generate a JSON object for daily English learning. The date should be "{today_str}".
     Target audience: High school student.
-    Content: An inspiring quote, its author, a simplified explanation, and key vocabulary.
+    Content: An inspiring quote, its author, a simplified explanation, and key vocabulary with Chinese definitions.
     Format:
     {{
       "daily_quote_data": {{
@@ -30,8 +30,8 @@ async def generate_daily_content():
           "simplified_version": "Simple explanation"
         }},
         "vocabulary": [
-           {{"word": "word1", "definition": "def1"}},
-           {{"word": "word2", "definition": "def2"}}
+           {{"word": "word1", "definition": "English definition", "definition_cn": "Chinese definition"}},
+           {{"word": "word2", "definition": "English definition", "definition_cn": "Chinese definition"}}
         ]
       }}
     }}
@@ -54,7 +54,12 @@ async def generate_daily_content():
         content = json.loads(json_str)
         
         # 1. 保存 JSON
-        with open(f"{DATA_DIR}/daily.json", "w") as f:
+        # Create daily directory
+        daily_dir = os.path.join(DATA_DIR, today_str)
+        if not os.path.exists(daily_dir):
+            os.makedirs(daily_dir)
+            
+        with open(os.path.join(daily_dir, "daily.json"), "w") as f:
             json.dump(content, f, ensure_ascii=False, indent=2)
             
         # 2. 生成 TTS 音频 (使用 edge-tts)
@@ -66,13 +71,13 @@ async def generate_daily_content():
              # Fallback to flat structure or old keys
              text_to_speak = content.get('quote', content.get('english_sentence', ''))
 
-        if not text_to_speak:
+         if not text_to_speak:
             print("Warning: No 'quote' or 'english_sentence' found in JSON.")
             text_to_speak = "Content generation error. Please check logs."
         communicate = edge_tts.Communicate(text_to_speak, "en-US-ChristopherNeural")
-        await communicate.save(f"{DATA_DIR}/daily_audio.mp3")
+        await communicate.save(os.path.join(daily_dir, "daily_audio.mp3"))
         
-        print("内容生成完毕！")
+        print(f"内容生成完毕！已保存至 {daily_dir}")
         
     except Exception as e:
         print(f"生成失败: {e}")
