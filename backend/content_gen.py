@@ -71,7 +71,7 @@ async def generate_daily_content():
              # Fallback to flat structure or old keys
              text_to_speak = content.get('quote', content.get('english_sentence', ''))
 
-         if not text_to_speak:
+        if not text_to_speak:
             print("Warning: No 'quote' or 'english_sentence' found in JSON.")
             text_to_speak = "Content generation error. Please check logs."
         communicate = edge_tts.Communicate(text_to_speak, "en-US-ChristopherNeural")
