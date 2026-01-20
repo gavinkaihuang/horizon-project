@@ -18,6 +18,7 @@ async def generate_daily_content():
     
     try:
         response = model.generate_content(prompt)
+        print(f"DEBUG: Raw response: {response.text}")
         content = json.loads(response.text.replace('```json', '').replace('```', ''))
         
         # 1. 保存 JSON
