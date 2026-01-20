@@ -5,13 +5,14 @@ services:
     container_name: horizon_backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8098:8000"
     volumes:
       - ./backend:/app # Develop mode: mount code directly
       - ./data:/app/data # 挂载数据目录
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - TZ=Asia/Shanghai
+    command: sh -c "python content_gen.py; uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug"
 
   # 静态文件服务 (用于让 iPad 下载 MP3 和 JSON)
   nginx:
