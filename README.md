@@ -9,7 +9,7 @@ An AI-assisted family education system that repurposes old iPads as electronic p
 
 ## Application Structure
 - **Backend (Port 8000)**: FastAPI service for recognition and task scheduling.
-- **Nginx (Port 8080)**: Static file server for generated content (audio, json) and images.
+- **Nginx (Port 8090)**: Static file server for generated content (audio, json) and images.
 
 ## How to Run
 
@@ -45,5 +45,5 @@ Response:
 
 ### 3. Daily Content
 The system automatically generates content at 04:00 daily.
-- JSON: `http://localhost:8080/daily.json`
-- Audio: `http://localhost:8080/daily_audio.mp3`
+- JSON: `http://localhost:8090/daily.json`
+- Audio: `http://localhost:8090/daily_audio.mp3`
