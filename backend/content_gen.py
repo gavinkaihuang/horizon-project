@@ -11,7 +11,7 @@ DATA_DIR = "/app/data"
 async def generate_daily_content():
     print("开始生成今日内容...")
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3-flash-preview')
     
     # Prompt (此处省略详细 Prompt，参考之前的对话)
     prompt = "Generate a daily quote JSON for a high school student learning English..."

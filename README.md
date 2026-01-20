@@ -8,7 +8,7 @@ An AI-assisted family education system that repurposes old iPads as electronic p
 - **SQLite Database**: Validates and logs recognition events.
 
 ## Application Structure
-- **Backend (Port 8000)**: FastAPI service for recognition and task scheduling.
+- **Backend (Port 8098)**: FastAPI service for recognition and task scheduling.
 - **Nginx (Port 8090)**: Static file server for generated content (audio, json) and images.
 
 ## How to Run
@@ -36,7 +36,7 @@ Place photos of family members in `data/known_faces/`.
 ### 2. Recognize Face
 Send a POST request to the recognition API:
 ```bash
-curl -X POST -F "file=@/path/to/photo.jpg" http://localhost:8000/api/recognize
+curl -X POST -F "file=@/path/to/photo.jpg" http://localhost:8098/api/recognize
 ```
 Response:
 ```json
