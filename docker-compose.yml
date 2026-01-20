@@ -9,6 +9,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/app # Develop mode: mount code directly
       - ./data:/app/data # 挂载数据目录
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
