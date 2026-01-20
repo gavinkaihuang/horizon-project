@@ -36,7 +36,10 @@ async def generate_daily_content():
             json.dump(content, f, ensure_ascii=False, indent=2)
             
         # 2. 生成 TTS 音频 (使用 edge-tts)
-        text_to_speak = content['english_sentence']
+        text_to_speak = content.get('quote', content.get('english_sentence', ''))
+        if not text_to_speak:
+            print("Warning: No 'quote' or 'english_sentence' found in JSON.")
+            text_to_speak = "Content generation error. Please check logs."
         communicate = edge_tts.Communicate(text_to_speak, "en-US-ChristopherNeural")
         await communicate.save(f"{DATA_DIR}/daily_audio.mp3")
         
