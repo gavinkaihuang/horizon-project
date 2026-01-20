@@ -6,15 +6,37 @@ import os
 import datetime
 
 API_KEY = os.getenv("GEMINI_API_KEY")
+MODULE = os.getenv("MODULE")
 DATA_DIR = "/app/data"
 
 async def generate_daily_content():
     print("开始生成今日内容...")
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-3-flash-preview')
+    model = genai.GenerativeModel(MODULE)
     
-    # Prompt (此处省略详细 Prompt，参考之前的对话)
-    prompt = "Generate a daily quote JSON for a high school student learning English..."
+    today_str = datetime.date.today().strftime("%Y-%m-%d")
+    prompt = f"""
+    Generate a JSON object for daily English learning. The date should be "{today_str}".
+    Target audience: High school student.
+    Content: An inspiring quote, its author, a simplified explanation, and key vocabulary.
+    Format:
+    {{
+      "daily_quote_data": {{
+        "date": "{today_str}",
+        "topic": "Topic here",
+        "content": {{
+          "quote": "Quote text",
+          "author": "Author Name",
+          "simplified_version": "Simple explanation"
+        }},
+        "vocabulary": [
+           {{"word": "word1", "definition": "def1"}},
+           {{"word": "word2", "definition": "def2"}}
+        ]
+      }}
+    }}
+    Ensure the response is valid JSON.
+    """
     
     import re
     try:
